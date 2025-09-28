@@ -1,0 +1,85 @@
+name: CI → Test + Validate → Deploy
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+# GITHUB_TOKEN moet issues en contents kunnen schrijven voor de provider
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  lint_test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install test & lint tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest ansible ansible-lint
+
+      - name: Run unit tests
+        working-directory: app
+        run: pytest -q
+
+      - name: Terraform fmt & validate
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+      - name: Terraform init (no backend)
+        working-directory: terraform
+        run: terraform init -backend=false
+      - name: Terraform fmt
+        working-directory: terraform
+        run: terraform fmt -check -diff
+      - name: Terraform validate
+        working-directory: terraform
+        run: terraform validate
+
+      - name: Ansible lint
+        working-directory: ansible
+        run: ansible-lint playbook.yml
+
+deploy:
+  name: Deploy (Terraform + Ansible)
+  runs-on: ubuntu-latest
+  needs: [lint_test]
+  if: ${{ success() }}
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+      terraform_version: 1.9.8
+
+    - name: Terraform Apply (create success Issue)
+      working-directory: terraform
+      env:
+      # Provider leest deze env var automatisch
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        TF_VAR_repo_owner: ${{ github.repository_owner }}
+        TF_VAR_repo_name: ${{ github.event.repository.name }}
+      run: |
+        terraform init -input=false
+        terraform apply -auto-approve -input=false
+
+    - name: Run Ansible to drop artefact
+      working-directory: ansible
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        ansible-playbook -i "localhost," -c local playbook.yml

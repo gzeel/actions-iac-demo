@@ -1,0 +1,18 @@
+---
+- name: Write deployment artefact to workspace
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+    - name: Create artefacts directory
+      ansible.builtin.file:
+      path: "{{ lookup('env','GITHUB_WORKSPACE') | default('../', true) }}/artefacts"
+      state: directory
+      mode: '0755'
+
+    - name: Write DEPLOYED.txt with timestamp
+      ansible.builtin.copy:
+      dest: "{{ lookup('env','GITHUB_WORKSPACE') | default('../', true) }}/artefacts/DEPLOYED.txt"
+      content: |
+        Deployed by GitHub Actions via Ansible.
+        Timestamp: {{ lookup('pipe','date -u +%Y-%m-%dT%H:%M:%SZ') }}
