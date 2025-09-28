@@ -1,9 +1,9 @@
 variable "repo_owner" {
-  type = string
+  type        = string
   description = "Owner (org of user) van de GitHub repo"
 }
 
 variable "repo_name" {
-  type = string
+  type        = string
   description = "Naam van de GitHub repo"
 }
