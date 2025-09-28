@@ -52,34 +52,34 @@ jobs:
         working-directory: ansible
         run: ansible-lint playbook.yml
 
-deploy:
-  name: Deploy (Terraform + Ansible)
-  runs-on: ubuntu-latest
-  needs: [lint_test]
-  if: ${{ success() }}
-  steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+  deploy:
+    name: Deploy (Terraform + Ansible)
+    runs-on: ubuntu-latest
+    needs: [lint_test]
+    if: ${{ success() }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-      with:
-      terraform_version: 1.9.8
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+        terraform_version: 1.9.8
 
-    - name: Terraform Apply (create success Issue)
-      working-directory: terraform
-      env:
-      # Provider leest deze env var automatisch
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        TF_VAR_repo_owner: ${{ github.repository_owner }}
-        TF_VAR_repo_name: ${{ github.event.repository.name }}
-      run: |
-        terraform init -input=false
-        terraform apply -auto-approve -input=false
+      - name: Terraform Apply (create success Issue)
+        working-directory: terraform
+        env:
+        # Provider leest deze env var automatisch
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TF_VAR_repo_owner: ${{ github.repository_owner }}
+          TF_VAR_repo_name: ${{ github.event.repository.name }}
+        run: |
+          terraform init -input=false
+          terraform apply -auto-approve -input=false
 
-    - name: Run Ansible to drop artefact
-      working-directory: ansible
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        ansible-playbook -i "localhost," -c local playbook.yml
+      - name: Run Ansible to drop artefact
+        working-directory: ansible
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          ansible-playbook -i "localhost," -c local playbook.yml
