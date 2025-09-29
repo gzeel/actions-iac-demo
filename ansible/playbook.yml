@@ -17,7 +17,7 @@
     - name: Write DEPLOYED_FILE.txt with timestamp
       ansible.builtin.copy:
         dest: "{{ workspace_path }}/artefacts/DEPLOYED_FILE.txt"
-        mode: '0644'
+        mode: '06444'
         content: |
           Deployed by GitHub Actions via Ansible.
           Timestamp: {{ lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%SZ') }}
