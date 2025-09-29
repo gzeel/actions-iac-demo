@@ -14,9 +14,9 @@
         state: directory
         mode: '0755'
 
-    - name: Write DEPLOYED.txt with timestamp
+    - name: Write DEPLOYED_FILE.txt with timestamp
       ansible.builtin.copy:
-        dest: "{{ workspace_path }}/artefacts/DEPLOYED.txt"
+        dest: "{{ workspace_path }}/artefacts/DEPLOYED_FILE.txt"
         mode: '0644'
         content: |
           Deployed by GitHub Actions via Ansible.
